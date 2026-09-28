@@ -1,0 +1,418 @@
+/* ==========================================================================
+   LAYOUT — shell, header, nav, footer
+   ========================================================================== */
+
+/* ── Containers ──────────────────────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: var(--max-w);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.container--wide {
+  max-width: none;
+}
+
+.section {
+  position: relative;
+  padding-block: var(--sp-section);
+}
+
+.section--tight {
+  padding-block: clamp(3rem, 1.5rem + 6vw, 7rem);
+}
+
+.section--flush-top {
+  padding-top: 0;
+}
+
+/* Hairline rule used to separate editorial blocks */
+.rule {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+  width: 100%;
+}
+
+/* Section header: an eyebrow label above a heading, nothing else. */
+.section-head {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: clamp(2.5rem, 1rem + 5vw, 5rem);
+}
+
+.section-head__title {
+  max-width: 18ch;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 800;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  /* JS toggles .is-pinned once the user scrolls past the hero */
+  transition: background-color 0.4s var(--ease-out),
+    border-color 0.4s var(--ease-out), backdrop-filter 0.4s var(--ease-out);
+  border-bottom: 1px solid transparent;
+}
+
+.site-header.is-pinned {
+  background: rgb(10 10 11 / 0.78);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom-color: var(--line);
+}
+
+/* Hide on scroll down, reveal on scroll up */
+.site-header.is-hidden {
+  transform: translateY(-100%);
+  transition: transform 0.45s var(--ease-in-out),
+    background-color 0.4s var(--ease-out);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+}
+
+/* Wordmark */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.brand__mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  color: var(--accent);
+}
+
+.brand__sub {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--bone-dim);
+  text-transform: uppercase;
+  padding-left: 0.55rem;
+  margin-left: 0.15rem;
+  border-left: 1px solid var(--line-strong);
+}
+
+@media (max-width: 30rem) {
+  .brand__sub {
+    display: none;
+  }
+}
+
+/* Desktop nav */
+.nav {
+  display: none;
+}
+
+.nav__list {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 0.5rem + 1.6vw, 2.5rem);
+}
+
+.nav__link {
+  position: relative;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding-block: 0.4rem;
+  color: var(--bone);
+  transition: color 0.3s var(--ease-out);
+}
+
+.nav__link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.45s var(--ease-in-out);
+}
+
+.nav__link:hover::after,
+.nav__link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.nav__link[aria-current='page'] {
+  color: var(--accent);
+}
+
+.nav__link[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+.site-header__cta {
+  display: none;
+}
+
+@media (min-width: 62rem) {
+  .nav,
+  .site-header__cta {
+    display: block;
+  }
+}
+
+/* ── Menu toggle (mobile) ────────────────────────────────────────────────── */
+.menu-toggle {
+  position: relative;
+  z-index: 2;
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  transition: border-color 0.3s var(--ease-out);
+}
+
+.menu-toggle:hover {
+  border-color: var(--accent);
+}
+
+.menu-toggle__bars {
+  display: grid;
+  gap: 5px;
+  width: 1.125rem;
+}
+
+.menu-toggle__bars span {
+  display: block;
+  height: 1.5px;
+  width: 100%;
+  background: var(--bone);
+  transition: transform 0.4s var(--ease-in-out),
+    opacity 0.25s var(--ease-out);
+}
+
+.menu-toggle[aria-expanded='true'] .menu-toggle__bars span:first-child {
+  transform: translateY(6.5px) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded='true'] .menu-toggle__bars span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle[aria-expanded='true'] .menu-toggle__bars span:last-child {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+@media (min-width: 62rem) {
+  .menu-toggle {
+    display: none;
+  }
+}
+
+/* ── Mobile overlay menu ─────────────────────────────────────────────────── */
+.mobile-nav {
+  position: fixed;
+  inset: 0;
+  z-index: 790;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--header-h) var(--gutter) var(--sp-5);
+  /* Closed state — JS animates the clip-path open */
+  clip-path: inset(0 0 100% 0);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mobile-nav.is-open {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.mobile-nav__list {
+  display: grid;
+  gap: 0.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.mobile-nav__item {
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.mobile-nav__link {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding-block: clamp(0.75rem, 0.3rem + 1.6vw, 1.35rem);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1rem + 6vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  transition: color 0.35s var(--ease-out), padding-left 0.4s var(--ease-out);
+}
+
+.mobile-nav__link:hover {
+  color: var(--accent);
+  padding-left: 0.75rem;
+}
+
+.mobile-nav__index {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+}
+
+.mobile-nav__foot {
+  margin-top: var(--sp-5);
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--fs-sm);
+  color: var(--bone-dim);
+}
+
+.mobile-nav__foot a:hover {
+  color: var(--accent);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.site-footer {
+  position: relative;
+  background: var(--ink);
+  border-top: 1px solid var(--line);
+  padding-top: clamp(3.5rem, 2rem + 6vw, 7rem);
+  overflow: hidden;
+}
+
+.footer-grid {
+  display: grid;
+  gap: var(--sp-5);
+  grid-template-columns: 1fr;
+  padding-bottom: var(--sp-6);
+}
+
+@media (min-width: 48rem) {
+  .footer-grid {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: var(--sp-4);
+  }
+}
+
+.footer-col__title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  margin-bottom: var(--sp-3);
+}
+
+.footer-col ul {
+  display: grid;
+}
+
+/* Padding rather than list gap: same visual rhythm, but each link becomes a
+   ~44px touch target instead of a 20px line of text. */
+.footer-col a,
+.footer-col li.muted {
+  font-size: var(--fs-sm);
+  color: var(--bone);
+  transition: color 0.3s var(--ease-out);
+  display: inline-block;
+  padding-block: 0.6rem;
+}
+
+.footer-col a:hover {
+  color: var(--accent);
+}
+
+.footer-blurb {
+  color: var(--bone-dim);
+  font-size: var(--fs-sm);
+  max-width: 32ch;
+  margin-top: var(--sp-2);
+  line-height: 1.6;
+}
+
+/* The oversized wordmark that sits at the bottom of every page */
+.footer-wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  /* Sized to fit "Arham Entertainment" on one line: 19 characters at roughly
+     0.55em average advance, less the tracking, lands near 8vw. Larger and it
+     clips mid-word against the footer's overflow:hidden. */
+  font-size: clamp(1.5rem, 8vw, 9rem);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line-strong);
+  user-select: none;
+  white-space: nowrap;
+  padding-bottom: 0.08em;
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+}
+
+.footer-bar {
+  border-top: 1px solid var(--line);
+  padding-block: var(--sp-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+  text-transform: uppercase;
+}
+
+.footer-bar a:hover {
+  color: var(--accent);
+}
+
+.footer-socials {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+/* Touch targets in the footer bar and the mobile menu footer */
+.footer-bar a,
+.mobile-nav__foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+
+.brand {
+  padding-block: 0.55rem;
+}

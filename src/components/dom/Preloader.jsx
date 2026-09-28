@@ -1,46 +1,48 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+
+/** Below this, loading finished so fast that showing a screen would be worse
+ *  than showing nothing: a flash of counter and then the page. */
+const WORTH_SHOWING_MS = 180;
 
 /**
- * Holds the page until the 3D bundle and first textures are in.
+ * The loading screen, which now measures something.
  *
- * Kept short on purpose: this sits in front of the work, so it counts real
- * progress and gets out of the way rather than running a fixed animation.
+ * It reports real progress from App: the two type faces and every image the
+ * flight will show, counted as each one lands. And it only appears at all if
+ * that work is still going after a fifth of a second, so a warm cache gets
+ * the page rather than a progress bar it does not need.
  */
-export default function Preloader({ ready }) {
-  const [shown, setShown] = useState(true);
-  const [pct, setPct] = useState(0);
-  const target = useRef(0);
+export default function Preloader({ ready, progress }) {
+  const [show, show_] = useState(false);
+  const [gone, gone_] = useState(false);
 
+  // Decide once whether this load is slow enough to deserve a screen.
   useEffect(() => {
-    target.current = ready ? 100 : 78;
-    let raf;
-    const tick = () => {
-      setPct((p) => {
-        const next = p + (target.current - p) * 0.08;
-        return next > 99.5 && ready ? 100 : next;
-      });
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const t = setTimeout(() => {
+      if (!ready) show_(true);
+    }, WORTH_SHOWING_MS);
+    return () => clearTimeout(t);
   }, [ready]);
 
+  // Let the last frame read 100 before it leaves.
   useEffect(() => {
-    if (!ready || pct < 99) return;
-    const t = setTimeout(() => setShown(false), 500);
+    if (!ready) return;
+    const t = setTimeout(() => gone_(true), show ? 420 : 0);
     return () => clearTimeout(t);
-  }, [ready, pct]);
+  }, [ready, show]);
 
-  if (!shown) return null;
+  if (gone || !show) return null;
+
+  const pct = Math.round((ready ? 1 : progress) * 100);
 
   return (
     <div className="preloader" data-done={ready ? 'true' : 'false'}>
       <div className="preloader__inner">
         <span className="preloader__word">Arham</span>
-        <span className="preloader__count">{String(Math.round(pct)).padStart(3, '0')}</span>
+        <span className="preloader__count">{String(pct).padStart(3, '0')}</span>
       </div>
       <div className="preloader__bar">
-        <span style={{ transform: `scaleX(${pct / 100})` }} />
+        <span style={{ transform: `scaleX(${(ready ? 1 : progress).toFixed(3)})` }} />
       </div>
     </div>
   );

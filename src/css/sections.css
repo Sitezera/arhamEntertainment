@@ -1,0 +1,812 @@
+/* ==========================================================================
+   SECTIONS — preloader, hero, statement, stacking services, work, stats, CTA
+   ========================================================================== */
+
+/* ── Preloader ───────────────────────────────────────────────────────────── */
+/* Adapted from ui-components/preloaders/split-text-preloader: the wordmark
+   splits top/bottom while a panel expands out of the gap into the hero. */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: var(--ink);
+  overflow: hidden;
+  visibility: hidden; /* GSAP reveals it — prevents a flash of unstyled text */
+}
+
+.preloader__panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  transform: translate(-50%, -50%);
+  will-change: width, height, border-radius;
+}
+
+.preloader__frame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.preloader__text {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  /* difference keeps the wordmark legible over the expanding panel */
+  mix-blend-mode: difference;
+  color: #fff;
+}
+
+.preloader__word {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 0.5rem + 17vw, 17rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  will-change: transform, opacity;
+  opacity: 0;
+}
+
+.preloader__word--top {
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+}
+
+.preloader__word--bottom {
+  clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
+}
+
+.preloader__counter {
+  position: absolute;
+  right: var(--gutter);
+  bottom: calc(var(--gutter) * 0.9);
+  z-index: 20;
+  font-family: var(--font-mono);
+  font-size: clamp(1.5rem, 0.8rem + 3vw, 3rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--bone-dim);
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-top: calc(var(--header-h) + var(--sp-4));
+  padding-bottom: clamp(1.5rem, 0.5rem + 3vw, 3rem);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  will-change: transform;
+}
+
+.hero__media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--ink) 2%,
+    rgb(10 10 11 / 0.35) 45%,
+    rgb(10 10 11 / 0.6) 100%
+  );
+}
+
+/* ── Drifting colour fields ──
+   Radial gradients fade out on their own, so no blur filter is needed — these
+   animate on transform only and stay on the compositor. */
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero__blob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  will-change: transform;
+  opacity: 0.55;
+}
+
+.hero__blob--1 {
+  width: 62vw;
+  aspect-ratio: 1;
+  top: -22%;
+  left: -12%;
+  background: radial-gradient(circle, rgb(255 74 28 / 0.5) 0%, transparent 62%);
+  animation: blob-drift-1 24s ease-in-out infinite;
+}
+
+.hero__blob--2 {
+  width: 54vw;
+  aspect-ratio: 1;
+  bottom: -26%;
+  right: -10%;
+  background: radial-gradient(circle, rgb(74 29 143 / 0.55) 0%, transparent 62%);
+  animation: blob-drift-2 30s ease-in-out infinite;
+}
+
+.hero__blob--3 {
+  width: 40vw;
+  aspect-ratio: 1;
+  top: 28%;
+  right: 22%;
+  background: radial-gradient(circle, rgb(255 176 58 / 0.3) 0%, transparent 64%);
+  animation: blob-drift-3 21s ease-in-out infinite;
+}
+
+@keyframes blob-drift-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(8vw, 6vh, 0) scale(1.14); }
+}
+
+@keyframes blob-drift-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.08); }
+  50%      { transform: translate3d(-7vw, -5vh, 0) scale(1); }
+}
+
+@keyframes blob-drift-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(-5vw, 7vh, 0) scale(1.2); }
+}
+
+/* Vertical hairlines echoing a contact sheet */
+.hero__rules {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding-inline: var(--gutter);
+  max-width: var(--max-w);
+  margin-inline: auto;
+  pointer-events: none;
+}
+
+.hero__rules span {
+  border-left: 1px solid rgb(242 238 230 / 0.06);
+}
+
+.hero__rules span:last-child {
+  border-right: 1px solid rgb(242 238 230 / 0.06);
+}
+
+/* ── Floating image cluster ──
+   Lives in the empty upper band of the hero; the headline is bottom-aligned,
+   so the two never fight for the same space. */
+.hero__floats {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero__float {
+  position: absolute;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  will-change: transform;
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.55);
+}
+
+.hero__float__fill {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__float--a {
+  top: 13%;
+  right: 6%;
+  width: clamp(112px, 16vw, 244px);
+  aspect-ratio: 3 / 4;
+}
+
+.hero__float--b {
+  top: 46%;
+  left: 4%;
+  width: clamp(76px, 10vw, 158px);
+  aspect-ratio: 1;
+}
+
+.hero__float--c {
+  top: 9%;
+  left: 31%;
+  width: clamp(70px, 9vw, 140px);
+  aspect-ratio: 4 / 5;
+}
+
+/* Below the headline breakpoint the cluster crowds the type — keep one card. */
+@media (max-width: 47.99rem) {
+  .hero__float--b,
+  .hero__float--c {
+    display: none;
+  }
+
+  .hero__float--a {
+    top: 11%;
+    right: 5%;
+    width: 34vw;
+  }
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--sp-4);
+  width: 100%;
+}
+
+.hero__title {
+  font-size: var(--fs-h1);
+  margin-block: clamp(1rem, 0.5rem + 2vw, 2.25rem);
+}
+
+/* Each line is a mask; the inner span slides up out of it */
+.hero__line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em; /* room for descenders inside the mask */
+}
+
+.hero__line > span {
+  display: block;
+  will-change: transform;
+}
+
+/* Staggered indents so the stack reads as composed type, not a left-aligned
+   paragraph — the three lines step left → centre → right.
+
+   The middle indent carries the whole composition: too small and lines 1 and 2
+   read as left-aligned with line 3 orphaned out at the right margin. It wants
+   to land near the midpoint of the step to the right edge.
+
+   Collapsed on small screens, where there is no room to offset anything. */
+@media (min-width: 48rem) {
+  /* Percentage, not vw: the container is capped at 90rem, so a viewport-based
+     indent keeps growing on an ultra-wide monitor and eventually pushes this
+     line past the container's right edge. A percentage resolves against the
+     container, so the step holds at every width.
+     ~36% puts the middle line's start roughly halfway between line 1's start
+     and line 3's, which is what makes the three read as an even staircase. */
+  .hero__line--b {
+    padding-left: 36%;
+  }
+
+  .hero__line--c {
+    text-align: right;
+  }
+}
+
+.hero__title em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.hero__foot {
+  display: grid;
+  gap: var(--sp-4);
+  align-items: end;
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-3);
+}
+
+@media (min-width: 62rem) {
+  .hero__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-5);
+  }
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Scroll cue */
+.scroll-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.scroll-cue__line {
+  width: 3rem;
+  height: 1px;
+  background: var(--line-strong);
+  position: relative;
+  overflow: hidden;
+}
+
+.scroll-cue__line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left;
+  animation: cue-sweep 2.4s var(--ease-in-out) infinite;
+}
+
+@keyframes cue-sweep {
+  0%   { transform: scaleX(0); transform-origin: left; }
+  45%  { transform: scaleX(1); transform-origin: left; }
+  55%  { transform: scaleX(1); transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+
+
+/* ── Zoom reveal ─────────────────────────────────────────────────────────── */
+/* A viewport-sized frame whose clip-path opens from a small centred card.
+   The closed inset is written by JS; without JS it stays fully open, which is
+   a perfectly good full-bleed image. */
+.zoom-reveal {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.zoom-reveal__frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: clip-path;
+}
+
+.zoom-reveal__media {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* Light vignette only — enough to bed the frame into the page background
+   without muddying the footage. There is no overlaid copy to protect. */
+.zoom-reveal__media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    80% 80% at 50% 50%,
+    rgb(10 10 11 / 0) 0%,
+    rgb(10 10 11 / 0.42) 100%
+  );
+}
+
+/* ── Statement (word-by-word scroll reveal) ──────────────────────────────── */
+.statement {
+  max-width: 24ch;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 0.8rem + 4.2vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.statement .word {
+  display: inline-block;
+  /* JS scrubs opacity from here to 1 as the block crosses the viewport */
+  opacity: 0.14;
+  will-change: opacity;
+}
+
+.statement .word--accent {
+  color: var(--accent);
+}
+
+.statement-grid {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+@media (min-width: 62rem) {
+  .statement-grid {
+    grid-template-columns: 1.5fr 1fr;
+    gap: var(--sp-6);
+    align-items: end;
+  }
+
+  .statement {
+    max-width: 18ch;
+  }
+}
+
+.statement-aside {
+  display: grid;
+  gap: var(--sp-3);
+  max-width: 38ch;
+  color: var(--bone-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}
+
+/* ── Cover panels ────────────────────────────────────────────────────────── */
+/* Adapted from RaDins' featured-work section: one pin for the whole run, with
+   each panel sliding up to cover the one before it. The original positions
+   panels at `top: 100%` and animates `top`; these sit at inset 0 and move on
+   transform instead, so the slide composites rather than reflowing. */
+.cover {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.cover__viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.cover__panel {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding-block: clamp(2.5rem, 1rem + 6vw, 6rem);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Every panel but the first starts below the fold. Gated on no-preference so
+   the reduced-motion fallback below isn't out-specificity'd by it. JS re-applies
+   this with an explicit y:0 — see base.css on GSAP's matrix parse. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .cover__panel + .cover__panel {
+    transform: translateY(100%);
+  }
+}
+
+.cover__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  will-change: transform;
+}
+
+.cover__media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(10 10 11 / 0.88) 0%,
+    rgb(10 10 11 / 0.45) 48%,
+    rgb(10 10 11 / 0.25) 100%
+  );
+}
+
+.cover__body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--sp-2);
+  align-content: end;
+}
+
+.cover__index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+
+.cover__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(3rem, 1rem + 11vw, 11rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.cover__copy {
+  color: var(--bone-dim);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  max-width: 42ch;
+}
+
+/* Without JS — and under reduced motion — the pin never runs, so the panels
+   stack down the page as ordinary full-height sections instead. */
+:root:not(.js) .cover,
+:root:not(.js) .cover__viewport {
+  position: relative;
+  height: auto;
+}
+
+:root:not(.js) .cover__panel {
+  position: relative;
+  inset: auto;
+  min-height: 100svh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cover,
+  .cover__viewport {
+    position: relative;
+    height: auto;
+  }
+
+  .cover__panel {
+    position: relative;
+    inset: auto;
+    min-height: 100svh;
+    transform: none;
+  }
+}
+
+/* ── Stats ───────────────────────────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+@media (min-width: 62rem) {
+  .stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat {
+  background: var(--ink);
+  padding: clamp(1.5rem, 0.8rem + 2.5vw, 3rem) clamp(1rem, 0.5rem + 1.5vw, 2rem);
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.stat__value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.25rem, 1rem + 5vw, 5rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  display: flex;
+  align-items: baseline;
+}
+
+.stat__suffix {
+  color: var(--accent);
+  font-size: 0.5em;
+  margin-left: 0.1em;
+}
+
+.stat__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  line-height: 1.5;
+}
+
+/* ── Work grid ───────────────────────────────────────────────────────────── */
+.work-grid {
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 5rem);
+}
+
+@media (min-width: 48rem) {
+  .work-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Stagger the columns so the grid never reads as a plain table */
+  .work-card:nth-child(even) {
+    transform: translateY(clamp(2rem, 1rem + 4vw, 6rem));
+  }
+}
+
+.work-card {
+  position: relative;
+  display: block;
+  isolation: isolate;
+}
+
+.work-card__media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--ink-raised);
+}
+
+.work-card:nth-child(3n + 2) .work-card__media {
+  aspect-ratio: 4 / 3;
+}
+
+.work-card__fill {
+  position: absolute;
+  inset: -12%; /* overscan so the parallax never exposes an edge */
+  will-change: transform;
+}
+
+.work-card__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(10 10 11 / 0.7), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out);
+}
+
+.work-card:hover .work-card__veil,
+.work-card:focus-visible .work-card__veil {
+  opacity: 1;
+}
+
+.work-card__index {
+  position: absolute;
+  top: 1.1rem;
+  left: 1.25rem;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--bone);
+  mix-blend-mode: difference;
+}
+
+.work-card__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line);
+  transition: border-color 0.45s var(--ease-out);
+}
+
+.work-card:hover .work-card__meta {
+  border-bottom-color: var(--accent);
+}
+
+.work-card__title {
+  font-size: clamp(1.25rem, 0.9rem + 1.4vw, 2rem);
+  transition: color 0.35s var(--ease-out);
+}
+
+.work-card:hover .work-card__title {
+  color: var(--accent);
+}
+
+.work-card__cat {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
+
+
+/* ── Testimonial ─────────────────────────────────────────────────────────── */
+.quote {
+  display: grid;
+  gap: var(--sp-4);
+  max-width: 54rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.quote__mark {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 1rem + 8vw, 7rem);
+  line-height: 0.6;
+  color: var(--accent);
+  height: 0.5em;
+}
+
+.quote__text {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.35rem, 0.8rem + 2.4vw, 2.75rem);
+  line-height: 1.22;
+  letter-spacing: -0.025em;
+  text-transform: none;
+  text-wrap: balance;
+}
+
+.quote__text .word {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.quote__by {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.quote__by strong {
+  color: var(--bone);
+  font-weight: 500;
+}
+
+/* ── CTA panel ───────────────────────────────────────────────────────────── */
+.cta {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  padding-block: clamp(4rem, 2rem + 9vw, 10rem);
+  text-align: center;
+  isolation: isolate;
+}
+
+.cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    75% 120% at 50% 110%,
+    rgb(255 74 28 / 0.22) 0%,
+    transparent 62%
+  );
+}
+
+.cta__title {
+  font-size: var(--fs-mega);
+  line-height: 0.85;
+  margin-block: var(--sp-3) var(--sp-4);
+}
+
+.cta__title .char {
+  display: inline-block;
+  will-change: transform;
+}
+
+.cta__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/* ── Generic scroll reveal ───────────────────────────────────────────────── */
+/* JS animates these in. Fallback: if JS fails, nothing stays invisible —
+   the hidden state is applied by the script itself, not by this rule. */
+[data-reveal] {
+  will-change: transform, opacity;
+}

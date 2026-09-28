@@ -1,0 +1,591 @@
+/* ==========================================================================
+   PAGES — inner page hero, arc carousel, values, team, timeline, work list,
+   contact
+   ========================================================================== */
+
+/* ── Inner page hero ─────────────────────────────────────────────────────── */
+.page-hero {
+  position: relative;
+  padding-top: calc(var(--header-h) + clamp(3rem, 1rem + 7vw, 8rem));
+  padding-bottom: clamp(2.5rem, 1rem + 5vw, 6rem);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    85% 110% at 78% -10%,
+    rgb(255 74 28 / 0.16) 0%,
+    transparent 60%
+  );
+}
+
+.page-hero__title {
+  font-size: var(--fs-h1);
+  margin-block: var(--sp-3) var(--sp-4);
+  max-width: 14ch;
+}
+
+.page-hero__line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+
+.page-hero__line > span {
+  display: block;
+  will-change: transform;
+}
+
+.page-hero__foot {
+  display: grid;
+  gap: var(--sp-3);
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-3);
+}
+
+@media (min-width: 62rem) {
+  .page-hero__foot {
+    grid-template-columns: 1fr minmax(0, 32rem);
+    gap: var(--sp-5);
+    align-items: start;
+  }
+}
+
+/* Breadcrumb-ish index line */
+.page-index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+/* ── Curved arc carousel (process) ───────────────────────────────────────── */
+/* Adapted from ui-components/scroll-trigger/curved-arc-carousel.
+   Geometry is driven entirely by JS; these rules only set the coordinate
+   system and the card skin. IDs are required by the script. */
+:root {
+  --arc-vertical-position: 30%;
+  --arc-card-width: clamp(260px, min(80vw, 70svh), 760px);
+  --arc-number-size: clamp(7rem, min(22vw, 42svh), 24rem);
+  --arc-desc-size: clamp(0.95rem, min(2.1vw, 4.2svh), 1.6rem);
+}
+
+@media (max-width: 63.99rem) {
+  :root {
+    --arc-vertical-position: 46%;
+    --arc-number-size: clamp(5.5rem, min(32vw, 34svh), 24rem);
+    --arc-desc-size: clamp(0.9rem, min(4vw, 4vh), 1.4rem);
+  }
+}
+
+#arcCarouselPinWrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.arc-carousel-section {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--ink);
+  border-block: 1px solid var(--line);
+  z-index: 1;
+}
+
+/* Faint graph paper, tuned way down for the dark palette */
+.arc-grid-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+      rgb(242 238 230 / 0.035) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgb(242 238 230 / 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(75% 65% at 50% 40%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(
+    75% 65% at 50% 40%,
+    #000 0%,
+    transparent 78%
+  );
+}
+
+.arc-caption {
+  position: absolute;
+  bottom: clamp(1.5rem, 0.5rem + 3vw, 3.5rem);
+  left: 0;
+  width: 100%;
+  z-index: 12;
+  text-align: center;
+  padding-inline: var(--gutter);
+  pointer-events: none;
+}
+
+.arc-system {
+  position: absolute;
+  top: var(--arc-vertical-position);
+  left: 0;
+  width: 100%;
+  height: 0;
+  z-index: 10;
+}
+
+.arc-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1500px;
+  overflow: visible;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.arc-path-bg {
+  fill: none;
+  stroke: var(--bone);
+  stroke-width: 2;
+  opacity: 0.12;
+  stroke-dasharray: 6 8;
+}
+
+.arc-path-ticks {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 14;
+  stroke-dasharray: 2 130;
+  opacity: 0.5;
+}
+
+.arc-cards-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  perspective: 1000px;
+}
+
+.arc-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--arc-card-width);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  opacity: 0;
+}
+
+.arc-card__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.1rem;
+}
+
+.arc-card__number {
+  font-family: var(--font-display);
+  font-size: var(--arc-number-size);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--line-strong);
+  margin: -0.5em 0 -0.75rem; /* centre the numeral on the arc line */
+}
+
+.arc-card__pill {
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, min(1.2vw, 2.4svh), 0.85rem);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone);
+  padding: 0.6rem 1.4rem;
+  border: 1px solid var(--accent);
+  border-radius: 99px;
+  white-space: nowrap;
+  background: rgb(255 74 28 / 0.08);
+}
+
+.arc-card__desc {
+  font-size: var(--arc-desc-size);
+  line-height: 1.45;
+  font-weight: 300;
+  color: var(--bone-dim);
+  max-width: 34ch;
+  margin: 0 auto;
+}
+
+/* ── Values / capability grid ────────────────────────────────────────────── */
+.grid-cards {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .grid-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 64rem) {
+  .grid-cards--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.grid-card {
+  position: relative;
+  background: var(--ink);
+  padding: clamp(1.75rem, 1rem + 2.5vw, 3rem);
+  display: grid;
+  gap: var(--sp-2);
+  align-content: start;
+  min-height: clamp(14rem, 10rem + 12vw, 20rem);
+  transition: background-color 0.5s var(--ease-out);
+}
+
+.grid-card:hover {
+  background: var(--ink-hover);
+}
+
+.grid-card__index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+
+.grid-card__title {
+  font-size: clamp(1.15rem, 0.9rem + 1vw, 1.65rem);
+}
+
+.grid-card__copy {
+  color: var(--bone-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+}
+
+/* ── Team ────────────────────────────────────────────────────────────────── */
+.team-grid {
+  display: grid;
+  gap: clamp(1.5rem, 0.8rem + 2.5vw, 2.75rem);
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 64rem) {
+  .team-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.team-card__media {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--ink-raised);
+  /* Desaturate until hover — keeps the grid calm, rewards curiosity */
+  filter: grayscale(1) contrast(1.05);
+  transition: filter 0.6s var(--ease-out);
+}
+
+.team-card:hover .team-card__media {
+  filter: grayscale(0) contrast(1);
+}
+
+.team-card__name {
+  margin-top: var(--sp-2);
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+}
+
+.team-card__role {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  margin-top: 0.25rem;
+}
+
+/* ── Timeline ────────────────────────────────────────────────────────────── */
+.timeline {
+  border-top: 1px solid var(--line);
+}
+
+.timeline__row {
+  display: grid;
+  gap: 0.5rem var(--sp-4);
+  padding-block: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+  transition: background-color 0.45s var(--ease-out);
+}
+
+@media (min-width: 48rem) {
+  .timeline__row {
+    grid-template-columns: 8rem minmax(0, 22ch) minmax(0, 1fr);
+  }
+}
+
+.timeline__year {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.timeline__title {
+  font-size: clamp(1.1rem, 0.9rem + 0.9vw, 1.6rem);
+}
+
+.timeline__copy {
+  color: var(--bone-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  max-width: 52ch;
+}
+
+/* ── Work index list ─────────────────────────────────────────────────────── */
+.case-list {
+  border-top: 1px solid var(--line);
+}
+
+.case-row {
+  position: relative;
+  display: grid;
+  gap: 0.35rem var(--sp-4);
+  padding-block: clamp(1.5rem, 0.8rem + 2.5vw, 3rem);
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  transition: padding-inline 0.5s var(--ease-out);
+}
+
+@media (min-width: 62rem) {
+  .case-row {
+    grid-template-columns: 4rem minmax(0, 1.6fr) minmax(0, 1fr) auto;
+  }
+
+  .case-row:hover {
+    padding-inline: 1.25rem;
+  }
+}
+
+.case-row__index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  color: var(--bone-dim);
+}
+
+.case-row__title {
+  font-size: clamp(1.5rem, 1rem + 2.4vw, 3.25rem);
+  transition: color 0.4s var(--ease-out);
+}
+
+.case-row:hover .case-row__title {
+  color: var(--accent);
+}
+
+.case-row__cat {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.case-row__result {
+  font-size: var(--fs-sm);
+  color: var(--bone);
+  white-space: nowrap;
+}
+
+/* Floating preview that follows the cursor across the list — desktop only */
+.case-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 22rem;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  display: none;
+}
+
+.case-preview__item {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+@media (min-width: 62rem) and (hover: hover) {
+  .case-preview {
+    display: block;
+  }
+}
+
+/* ── Contact ─────────────────────────────────────────────────────────────── */
+.contact-layout {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+@media (min-width: 64rem) {
+  .contact-layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: clamp(3rem, 1rem + 6vw, 7rem);
+  }
+}
+
+.contact-form {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.form-row {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+@media (min-width: 40rem) {
+  .form-row--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Budget selector as a row of radio pills */
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.pill-option input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.pill-option span {
+  /* inline-flex + min-height so the tap target clears 44px on touch, which
+     the label text alone does not. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out),
+    background-color 0.3s var(--ease-out);
+}
+
+.pill-option:hover span {
+  color: var(--bone);
+  border-color: var(--bone-dim);
+}
+
+.pill-option input:checked + span {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bone);
+}
+
+.pill-option input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.form-status {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  min-height: 1.5em;
+}
+
+.form-status[data-state='ok'] {
+  color: #7fd6a2;
+}
+
+.form-status[data-state='error'] {
+  color: var(--accent-bright);
+}
+
+.contact-aside {
+  display: grid;
+  gap: var(--sp-4);
+  align-content: start;
+}
+
+.contact-block {
+  display: grid;
+  gap: 0.4rem;
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.contact-block__value {
+  font-size: clamp(1.05rem, 0.9rem + 0.7vw, 1.4rem);
+  font-weight: 500;
+}
+
+/* Email and phone are the primary actions on a phone — give them a real
+   touch target rather than a bare line of text. */
+.contact-block__value a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  transition: color 0.3s var(--ease-out);
+}
+
+.contact-block__value a:hover {
+  color: var(--accent);
+}
+
+/* ── Page transition curtain ─────────────────────────────────────────────── */
+/* A set of panels that wipe across on navigation. Inert until JS drives it. */
+.transition-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 9200;
+  display: flex;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.transition-curtain__panel {
+  flex: 1;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: bottom;
+}
+
+.transition-curtain__panel:nth-child(even) {
+  background: var(--accent-bright);
+}

@@ -4,7 +4,13 @@ import CssFlight from './components/dom/CssFlight.jsx';
 import Overlay from './components/dom/Overlay.jsx';
 import Downstream from './components/dom/Downstream.jsx';
 import Preloader from './components/dom/Preloader.jsx';
-import { detectTier, TIER_SETTINGS, SCROLL_PAGES } from './lib/constants.js';
+import {
+  detectTier,
+  TIER_SETTINGS,
+  SCROLL_PAGES,
+  SCREENS,
+  BAND_BLOCKS
+} from './lib/constants.js';
 import { scrollState } from './lib/scrollState.js';
 
 /**
@@ -25,6 +31,7 @@ import { scrollState } from './lib/scrollState.js';
  */
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Exposed so the flight can be measured from a headless browser without
   // threading scroll position through React state.
@@ -42,15 +49,62 @@ export default function App() {
     []
   );
 
-  // There is no scene graph to wait on any more; the first paint is the page.
+  // Real progress, or none at all.
+  //
+  // This used to ease toward 78 and wait on a hard-coded 120ms timeout, which
+  // meant the number measured nothing and the screen appeared every time
+  // whether there was anything to wait for or not. Now it counts the things
+  // the page actually needs: the two faces, and every image the flight will
+  // show. Measured, those land around 560ms on a fast connection and a second
+  // on a throttled one, so there is genuinely something to wait for.
   useEffect(() => {
-    const t = setTimeout(() => setReady(true), 120);
-    return () => clearTimeout(t);
+    let alive = true;
+
+    const urls = [
+      ...SCREENS.map((s) => s.src),
+      ...BAND_BLOCKS.filter((b) => b.kind === 'image').map((b) => b.media)
+    ];
+
+    const jobs = [
+      document.fonts ? document.fonts.ready : Promise.resolve(),
+      ...urls.map(
+        (src) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            // Resolve either way: a missing image should not hold the page
+            // behind a progress bar that can never finish.
+            img.onload = img.onerror = resolve;
+            img.src = src;
+          })
+      )
+    ];
+
+    let done = 0;
+    for (const job of jobs) {
+      job.then(() => {
+        if (!alive) return;
+        done += 1;
+        setProgress(done / jobs.length);
+      });
+    }
+
+    Promise.all(jobs).then(() => alive && setReady(true));
+
+    // A ceiling on the wait. The gallery is about a megabyte of photographs
+    // that nothing needs until a quarter of the way down, so on a slow
+    // connection waiting for all of it would hold the page for five seconds.
+    // Past this the page opens and the rest keeps streaming in behind it.
+    const ceiling = setTimeout(() => alive && setReady(true), 2200);
+
+    return () => {
+      alive = false;
+      clearTimeout(ceiling);
+    };
   }, []);
 
   return (
     <>
-      <Preloader ready={ready} />
+      <Preloader ready={ready} progress={progress} />
 
       <CssFlight reduced={reduced} haze={settings.haze} />
 

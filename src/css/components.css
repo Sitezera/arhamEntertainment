@@ -1,0 +1,510 @@
+/* ==========================================================================
+   COMPONENTS — buttons, cursor, marquee, cards, fields, media
+   Button internals keep the `t-` element classes from the ui-components
+   library so its MagneticButton JS drops in unchanged.
+   ========================================================================== */
+
+/* ── Buttons: shared ─────────────────────────────────────────────────────── */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  /* Fixed box, not padding-driven, so every variant is exactly the same size
+     regardless of what its contents do to the line box. */
+  min-height: 3.375rem;
+  padding: 0 2.35rem;
+  line-height: 1;
+  border-radius: 99px;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+/* Magnetic — solid fill, ink circle wipes in from the cursor */
+.btn--magnetic {
+  background: var(--bone);
+  color: var(--ink);
+  border: 1px solid var(--bone);
+  transition: color 0.3s var(--ease-out);
+}
+
+.btn--magnetic .t-text {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+  display: inline-block;
+}
+
+.btn--magnetic .t-hover-circle {
+  position: absolute;
+  z-index: 0;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.btn--magnetic:hover {
+  color: var(--bone);
+}
+
+/* Accent variant of the magnetic button */
+.btn--magnetic.btn--accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bone);
+}
+
+.btn--magnetic.btn--accent .t-hover-circle {
+  background: var(--bone);
+}
+
+.btn--magnetic.btn--accent:hover {
+  color: var(--ink);
+}
+
+/* Outline variant of the magnetic button — pairs with the filled one above
+   without any metric drift, since both take the same code path. */
+.btn--magnetic.btn--ghost {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--bone);
+  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+
+.btn--magnetic.btn--ghost .t-hover-circle {
+  background: var(--accent);
+}
+
+.btn--magnetic.btn--ghost:hover {
+  color: var(--bone);
+  border-color: var(--accent);
+}
+
+/* Small header CTA */
+.btn--sm {
+  min-height: 2.625rem;
+  padding: 0 1.4rem;
+  font-size: 0.8rem;
+}
+
+
+/* ── Custom cursor ───────────────────────────────────────────────────────── */
+/* Pointer-only. Touch devices never see it (see media query at the bottom). */
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 8500;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  opacity: 0;
+}
+
+.cursor__dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bone);
+  transform: translate(-50%, -50%);
+}
+
+.cursor__ring {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--bone);
+  transform: translate(-50%, -50%);
+}
+
+.cursor__label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0;
+  white-space: nowrap;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    display: none;
+  }
+}
+
+/* ── Marquee ─────────────────────────────────────────────────────────────── */
+.marquee {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding-block: clamp(1rem, 0.5rem + 1.5vw, 2rem);
+  border-block: 1px solid var(--line);
+  background: var(--ink);
+}
+
+.marquee__track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee__group {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.marquee__item {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(1.5rem, 0.5rem + 3vw, 3.5rem);
+  padding-inline: clamp(0.75rem, 0.3rem + 1.5vw, 1.75rem);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 0.8rem + 3.6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.marquee__item--ghost {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line-strong);
+}
+
+.marquee__star {
+  width: clamp(0.85rem, 0.5rem + 1vw, 1.6rem);
+  height: auto;
+  color: var(--accent);
+  flex: none;
+}
+
+/* Quieter mono ticker used for client logos / credits */
+.marquee--fine {
+  border-block-color: var(--line);
+  padding-block: 1.15rem;
+}
+
+.marquee--fine .marquee__item {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--bone-dim);
+  gap: 2rem;
+  padding-inline: 1rem;
+}
+
+/* ── Media frame ─────────────────────────────────────────────────────────── */
+/* Placeholder visuals: layered gradients + grain read as intentional art
+   direction. Swap `.media__fill` for a real <img> when assets land. */
+.media {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--ink-raised);
+  isolation: isolate;
+}
+
+.media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(10 10 11 / 0.65),
+    rgb(10 10 11 / 0) 55%
+  );
+  pointer-events: none;
+}
+
+.media__fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+}
+
+.media__ratio {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Photography sits inside its gradient holder, so a slow, blocked or failed
+   image still leaves a composed surface instead of an empty rectangle. The
+   holder is also what the animations transform — the img just rides along. */
+/* Descendant, not child: the images are wrapped in <picture> for AVIF/WebP
+   negotiation, and selectors match the DOM even though `picture` itself is
+   display:contents and generates no box. */
+.media__fill img,
+.cover__media img,
+.zoom-reveal__media img,
+.zoom-reveal__media video,
+.hero__media img,
+.hero__float__fill img,
+.work-card__fill img,
+.team-card__media img,
+.case-preview__item img,
+.preloader__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Gradient placeholder palettes — also the fallback behind every photo */
+.gradient-1 {
+  background:
+    radial-gradient(70% 90% at 20% 15%, #ff4a1c 0%, transparent 62%),
+    radial-gradient(85% 75% at 85% 80%, #4a1d8f 0%, transparent 60%),
+    linear-gradient(140deg, #1a0f0a, #08080a 70%);
+}
+
+.gradient-2 {
+  background:
+    radial-gradient(60% 80% at 80% 20%, #ffb03a 0%, transparent 58%),
+    radial-gradient(75% 85% at 15% 85%, #c2271f 0%, transparent 62%),
+    linear-gradient(200deg, #16100c, #09090b 72%);
+}
+
+.gradient-3 {
+  background:
+    radial-gradient(65% 85% at 50% 10%, #1f6fb2 0%, transparent 60%),
+    radial-gradient(80% 80% at 20% 90%, #ff4a1c 0%, transparent 55%),
+    linear-gradient(160deg, #0b1118, #08080a 70%);
+}
+
+.gradient-4 {
+  background:
+    radial-gradient(70% 75% at 30% 80%, #2f9e7a 0%, transparent 58%),
+    radial-gradient(70% 90% at 80% 15%, #ffd166 0%, transparent 55%),
+    linear-gradient(120deg, #0d1411, #08080a 72%);
+}
+
+.gradient-5 {
+  background:
+    radial-gradient(75% 80% at 70% 75%, #b5307a 0%, transparent 60%),
+    radial-gradient(65% 75% at 15% 20%, #ff7a42 0%, transparent 58%),
+    linear-gradient(175deg, #170c14, #08080a 70%);
+}
+
+.gradient-6 {
+  background:
+    radial-gradient(80% 70% at 25% 25%, #5b56d6 0%, transparent 60%),
+    radial-gradient(70% 85% at 85% 85%, #23c4d9 0%, transparent 55%),
+    linear-gradient(150deg, #0c0d1a, #08080a 72%);
+}
+
+/* ── Tags / pills ────────────────────────────────────────────────────────── */
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 0.35rem 0.85rem;
+  white-space: nowrap;
+}
+
+/* ── Form fields ─────────────────────────────────────────────────────────── */
+.field {
+  position: relative;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.field__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.field__input,
+.field__textarea,
+.field__select {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
+  padding: 0.85rem 0;
+  font-size: var(--fs-body);
+  color: var(--bone);
+  transition: border-color 0.35s var(--ease-out);
+  appearance: none;
+}
+
+.field__select {
+  cursor: pointer;
+  /* Custom chevron, since appearance:none removes the native one */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%238f8a82' stroke-width='1.5'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.25rem center;
+  background-size: 0.75rem;
+  padding-right: 1.75rem;
+}
+
+.field__select option {
+  background: var(--ink-raised);
+  color: var(--bone);
+}
+
+.field__textarea {
+  resize: vertical;
+  min-height: 7rem;
+  line-height: 1.6;
+}
+
+.field__input::placeholder,
+.field__textarea::placeholder {
+  color: rgb(143 138 130 / 0.55);
+}
+
+.field__input:focus,
+.field__textarea:focus,
+.field__select:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.field__error {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-bright);
+  min-height: 1em;
+}
+
+/* Honeypot — bots fill it, humans never see it */
+.field--trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ── Accordion (services / FAQ) ──────────────────────────────────────────── */
+.accordion__item {
+  border-bottom: 1px solid var(--line);
+}
+
+.accordion__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  text-align: left;
+  padding-block: clamp(1.25rem, 0.75rem + 1.6vw, 2.25rem);
+  transition: color 0.35s var(--ease-out);
+}
+
+.accordion__trigger:hover {
+  color: var(--accent);
+}
+
+.accordion__index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+  flex: none;
+  width: 2.5rem;
+}
+
+.accordion__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.35rem, 0.9rem + 2vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.accordion__icon {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  position: relative;
+}
+
+.accordion__icon::before,
+.accordion__icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transition: transform 0.45s var(--ease-in-out);
+}
+
+.accordion__icon::after {
+  transform: rotate(90deg);
+}
+
+.accordion__trigger[aria-expanded='true'] .accordion__icon::after {
+  transform: rotate(0deg);
+}
+
+/* Collapsed height comes from the `html.js` rule in base.css, so panels stay
+   readable if the bundle never loads. */
+.accordion__panel {
+  overflow: hidden;
+}
+
+.accordion__body {
+  display: grid;
+  gap: var(--sp-3);
+  padding: 0 0 var(--sp-4) 2.5rem;
+  max-width: 62ch;
+}
+
+@media (max-width: 40rem) {
+  .accordion__body {
+    padding-left: 0;
+  }
+}
+
+.accordion__body p {
+  color: var(--bone-dim);
+  line-height: 1.65;
+}

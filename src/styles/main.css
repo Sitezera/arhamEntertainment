@@ -101,6 +101,7 @@ body {
 }
 
 .hud__brand {
+  text-decoration: none;
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -115,6 +116,161 @@ body {
   color: var(--dim);
   padding-left: 0.7rem;
   border-left: 1px solid rgb(242 238 230 / 0.2);
+}
+
+/* Sits between the brand and the CTA on wide screens, and is dropped on
+   narrow ones where the CTA and the brand already fill the bar. */
+.hud__nav {
+  display: none;
+  margin-left: auto;
+  gap: clamp(1.1rem, 2.2vw, 2rem);
+}
+
+.hud__nav a {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(242 238 230 / 0.66);
+  text-decoration: none;
+  padding-block: 0.4rem;
+}
+
+.hud__nav a:hover { color: var(--bone); }
+
+@media (min-width: 52rem) {
+  .hud__nav { display: flex; }
+  /* The menu button and sheet are shared with the static pages, which define
+   them in pages.css. This page does not load that file, so the two rules it
+   needs are repeated here rather than pulling a whole stylesheet in for
+   them. Keep them in step. */
+.hud__menu {
+  margin-left: auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid rgb(242 238 230 / 0.3);
+  border-radius: 99px;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@media (min-width: 52rem) {
+  .hud__menu { display: none; }
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: var(--gutter);
+  background: rgb(8 8 10 / 0.97);
+  pointer-events: auto;
+}
+
+.sheet[data-open='true'] { display: flex; }
+
+.sheet a {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
+  color: var(--bone);
+  text-decoration: none;
+  padding-block: 0.3rem;
+}
+
+.sheet a[aria-current='page'] { color: var(--accent); }
+
+.sheet__close {
+  position: absolute;
+  top: var(--gutter);
+  right: var(--gutter);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: none;
+  border: 0;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.hud__cta { margin-left: 0; }
+}
+
+/* The menu button and sheet are shared with the static pages, which define
+   them in pages.css. This page does not load that file, so the two rules it
+   needs are repeated here rather than pulling a whole stylesheet in for
+   them. Keep them in step. */
+.hud__menu {
+  margin-left: auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid rgb(242 238 230 / 0.3);
+  border-radius: 99px;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@media (min-width: 52rem) {
+  .hud__menu { display: none; }
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: var(--gutter);
+  background: rgb(8 8 10 / 0.97);
+  pointer-events: auto;
+}
+
+.sheet[data-open='true'] { display: flex; }
+
+.sheet a {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
+  color: var(--bone);
+  text-decoration: none;
+  padding-block: 0.3rem;
+}
+
+.sheet a[aria-current='page'] { color: var(--accent); }
+
+.sheet__close {
+  position: absolute;
+  top: var(--gutter);
+  right: var(--gutter);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: none;
+  border: 0;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
 }
 
 .hud__cta {
@@ -145,7 +301,162 @@ body {
     display: none;
   }
 
-  .hud__cta {
+  /* Sits between the brand and the CTA on wide screens, and is dropped on
+   narrow ones where the CTA and the brand already fill the bar. */
+.hud__nav {
+  display: none;
+  margin-left: auto;
+  gap: clamp(1.1rem, 2.2vw, 2rem);
+}
+
+.hud__nav a {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(242 238 230 / 0.66);
+  text-decoration: none;
+  padding-block: 0.4rem;
+}
+
+.hud__nav a:hover { color: var(--bone); }
+
+@media (min-width: 52rem) {
+  .hud__nav { display: flex; }
+  /* The menu button and sheet are shared with the static pages, which define
+   them in pages.css. This page does not load that file, so the two rules it
+   needs are repeated here rather than pulling a whole stylesheet in for
+   them. Keep them in step. */
+.hud__menu {
+  margin-left: auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid rgb(242 238 230 / 0.3);
+  border-radius: 99px;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@media (min-width: 52rem) {
+  .hud__menu { display: none; }
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: var(--gutter);
+  background: rgb(8 8 10 / 0.97);
+  pointer-events: auto;
+}
+
+.sheet[data-open='true'] { display: flex; }
+
+.sheet a {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
+  color: var(--bone);
+  text-decoration: none;
+  padding-block: 0.3rem;
+}
+
+.sheet a[aria-current='page'] { color: var(--accent); }
+
+.sheet__close {
+  position: absolute;
+  top: var(--gutter);
+  right: var(--gutter);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: none;
+  border: 0;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.hud__cta { margin-left: 0; }
+}
+
+/* The menu button and sheet are shared with the static pages, which define
+   them in pages.css. This page does not load that file, so the two rules it
+   needs are repeated here rather than pulling a whole stylesheet in for
+   them. Keep them in step. */
+.hud__menu {
+  margin-left: auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid rgb(242 238 230 / 0.3);
+  border-radius: 99px;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@media (min-width: 52rem) {
+  .hud__menu { display: none; }
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: var(--gutter);
+  background: rgb(8 8 10 / 0.97);
+  pointer-events: auto;
+}
+
+.sheet[data-open='true'] { display: flex; }
+
+.sheet a {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
+  color: var(--bone);
+  text-decoration: none;
+  padding-block: 0.3rem;
+}
+
+.sheet a[aria-current='page'] { color: var(--accent); }
+
+.sheet__close {
+  position: absolute;
+  top: var(--gutter);
+  right: var(--gutter);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: none;
+  border: 0;
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.hud__cta {
     padding-inline: 0.85rem;
     font-size: 0.6rem;
   }
