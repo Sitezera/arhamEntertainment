@@ -1,0 +1,981 @@
+/* ==========================================================================
+   Arham 3D - Into the Frame
+   ========================================================================== */
+
+/* Self-hosted rather than linked from Google: a render-blocking request to a
+   third-party origin is the slowest thing on a page whose whole point is that
+   it starts instantly. Both are variable faces, so one file covers the whole
+   weight range each is used at. */
+@font-face {
+  font-family: 'Libre Baskerville';
+  src: url('/fonts/libre-baskerville.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Libre Baskerville';
+  src: url('/fonts/libre-baskerville-italic.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vollkorn';
+  src: url('/fonts/vollkorn.woff2') format('woff2');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vollkorn';
+  src: url('/fonts/vollkorn-italic.woff2') format('woff2');
+  font-weight: 400 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --ink: #08080a;
+  --bone: #f2eee6;
+  --dim: #8f8a82;
+  --accent: #ff4a1c;
+  /* Headings carry Libre Baskerville, sentences carry Vollkorn. The fallback
+     stacks are both serif, so a swap does not change the page's character. */
+  --font-display: 'Libre Baskerville', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Vollkorn', 'Iowan Old Style', Georgia, serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+  --gutter: clamp(1.15rem, 0.6rem + 2.4vw, 3rem);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+/* ── Canvas stage ────────────────────────────────────────────────────────── */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.stage canvas { display: block; touch-action: pan-y; }
+
+/* Gives the document real scroll height. The camera rig reads scrollTop from
+   this, which keeps the native scrollbar, touch fling and keyboard working. */
+.scroll-spacer { position: relative; z-index: 1; pointer-events: none; }
+
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
+/* Above .page (3). The header is the only persistent thing on the page, and
+   the sections scrolling past were drawing over it. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  /* Capped independently of --gutter: the gutter reaches 3rem at desktop,
+     which put the header at ~120px and ate an eighth of the viewport. */
+  padding: clamp(0.9rem, 0.6rem + 0.8vw, 1.15rem) var(--gutter);
+  min-height: 56px;
+  max-height: 80px;
+  pointer-events: auto;
+}
+
+.hud__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: 1.05rem;
+}
+
+.hud__sub {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding-left: 0.7rem;
+  border-left: 1px solid rgb(242 238 230 / 0.2);
+}
+
+.hud__cta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--bone);
+  text-decoration: none;
+  border: 1px solid rgb(242 238 230 / 0.3);
+  border-radius: 99px;
+  padding: 0.7rem 1.2rem;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  /* A two-line CTA is a broken CTA. The label is short enough to hold one
+     line at every width, so say so rather than hoping. */
+  white-space: nowrap;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+
+/* The CTA cannot wrap and cannot shrink its own text, so below this width the
+   header has to give it the room: the descriptor is decorative, the call to
+   action is not. Without this the pill runs past the right edge and is
+   clipped by the overlay rather than wrapping where anyone would see it. */
+@media (max-width: 26rem) {
+  .hud__sub {
+    display: none;
+  }
+
+  .hud__cta {
+    padding-inline: 0.85rem;
+    font-size: 0.6rem;
+  }
+}
+
+.hud__cta:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Beats are stacked in the same spot; only one is visible at a time, driven
+   by camera Z in Overlay.jsx. */
+.beat {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(3.5rem, 3rem + 5vw, 7rem);
+  max-width: calc(100vw - var(--gutter) * 2);
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+/* The closing frame has nothing in it but the address — the flight is over and
+   the scene is empty — so it sits in the middle rather than hugging a corner. */
+/* The reel fills the frame at the portal, and its footage can be bright.
+   Without this the header sits as off-white text on a white video frame. */
+.hud::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 190%;
+  background: linear-gradient(to bottom, rgb(8 8 10 / 0.55), transparent);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.beat--center {
+  left: 0;
+  right: 0;
+  top: 50%;
+  bottom: auto;
+  padding-inline: var(--gutter);
+  text-align: center;
+}
+
+.beat__kicker {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+}
+
+.beat__title {
+  font-family: var(--font-display);
+  /* The measure belongs here, not on .beat: `ch` resolves against the element's
+     own font-size, so 32ch on the section was 32 characters of body text —
+     about 285px — and it was clipping the headline at every width. */
+  max-width: 18ch;
+  font-size: clamp(1.6rem, 1rem + 2.6vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.beat__title--email {
+  /* The contact beat is one unbreakable token, so it cannot ride the headline
+     scale — at phone widths that scale runs the address off the edge. It gets
+     its own ramp, with overflow-wrap as a floor so a longer address wraps
+     rather than being clipped. */
+  max-width: none;
+  font-size: clamp(1.1rem, 0.2rem + 5vw, 3.2rem);
+  overflow-wrap: anywhere;
+}
+
+.beat__title a { color: inherit; text-decoration: none; border-bottom: 2px solid var(--accent); }
+
+
+/* ── Preloader ───────────────────────────────────────────────────────────── */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--ink);
+  display: grid;
+  place-content: center;
+  gap: 1.5rem;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+.preloader[data-done='true'] { opacity: 0; visibility: hidden; }
+
+.preloader__inner {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.preloader__word {
+  font-size: clamp(2rem, 1rem + 4vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.preloader__count {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.preloader__bar {
+  width: min(260px, 60vw);
+  height: 2px;
+  background: rgb(242 238 230 / 0.15);
+}
+
+.preloader__bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+}
+
+/* ── CSS flight (the no-WebGL engine) ────────────────────────────────────── */
+/* Fixed behind the overlay, exactly where the canvas would be. Everything in
+   here is positioned from the centre, because the projection in CssFlight.jsx
+   produces offsets from the optical axis, not from a corner. */
+.flat {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  /* The loop repaints this from the grade; this is only the first frame. */
+  background: #090a14;
+  contain: strict;
+}
+
+/* A sparse star field. Pure background-image, so it is 46 dots at zero DOM
+   cost and zero per-frame work — the WebGL path gets the same look from its
+   drifting motes instead. */
+.flat__stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(1px 1px at 8.57% 3.03%, rgb(255 255 255 / 0.55) 0, transparent 100%),
+    radial-gradient(1px 1px at 83.32% 62.34%, rgb(255 255 255 / 0.34) 0, transparent 100%),
+    radial-gradient(1px 1px at 76.04% 84.31%, rgb(255 255 255 / 0.48) 0, transparent 100%),
+    radial-gradient(1px 1px at 41.16% 6.6%, rgb(255 255 255 / 0.49) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 60.84% 21.01%, rgb(255 255 255 / 0.52) 0, transparent 100%),
+    radial-gradient(1px 1px at 69.07% 20.25%, rgb(255 255 255 / 0.41) 0, transparent 100%),
+    radial-gradient(1px 1px at 34.96% 24.66%, rgb(255 255 255 / 0.37) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 87.23% 88.72%, rgb(255 255 255 / 0.29) 0, transparent 100%),
+    radial-gradient(1px 1px at 72.95% 78.37%, rgb(255 255 255 / 0.42) 0, transparent 100%),
+    radial-gradient(1px 1px at 67.44% 73.42%, rgb(255 255 255 / 0.36) 0, transparent 100%),
+    radial-gradient(1px 1px at 11.92% 16.02%, rgb(255 255 255 / 0.25) 0, transparent 100%),
+    radial-gradient(1px 1px at 71.75% 77.77%, rgb(255 255 255 / 0.57) 0, transparent 100%),
+    radial-gradient(1px 1px at 74.38% 55.92%, rgb(255 255 255 / 0.38) 0, transparent 100%),
+    radial-gradient(1px 1px at 87.36% 27.8%, rgb(255 255 255 / 0.37) 0, transparent 100%),
+    radial-gradient(1px 1px at 85.55% 5.29%, rgb(255 255 255 / 0.24) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 35.46% 11.48%, rgb(255 255 255 / 0.43) 0, transparent 100%),
+    radial-gradient(1px 1px at 58.85% 22.99%, rgb(255 255 255 / 0.46) 0, transparent 100%),
+    radial-gradient(1px 1px at 45.66% 39.93%, rgb(255 255 255 / 0.56) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 35.64% 43.14%, rgb(255 255 255 / 0.36) 0, transparent 100%),
+    radial-gradient(1px 1px at 96.58% 76.41%, rgb(255 255 255 / 0.43) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 53.16% 55.64%, rgb(255 255 255 / 0.58) 0, transparent 100%),
+    radial-gradient(1px 1px at 42.73% 31.22%, rgb(255 255 255 / 0.24) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 2.78% 2.31%, rgb(255 255 255 / 0.62) 0, transparent 100%),
+    radial-gradient(1px 1px at 30.59% 49.24%, rgb(255 255 255 / 0.29) 0, transparent 100%),
+    radial-gradient(1px 1px at 66.26% 71.85%, rgb(255 255 255 / 0.38) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 26.91% 53.75%, rgb(255 255 255 / 0.44) 0, transparent 100%),
+    radial-gradient(1px 1px at 54.08% 18.95%, rgb(255 255 255 / 0.32) 0, transparent 100%),
+    radial-gradient(1px 1px at 58.18% 11.41%, rgb(255 255 255 / 0.43) 0, transparent 100%),
+    radial-gradient(1px 1px at 64.99% 33.91%, rgb(255 255 255 / 0.47) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 3.44% 60.7%, rgb(255 255 255 / 0.4) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 6.42% 7.04%, rgb(255 255 255 / 0.37) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 89.46% 36.41%, rgb(255 255 255 / 0.32) 0, transparent 100%),
+    radial-gradient(1px 1px at 26.89% 94.12%, rgb(255 255 255 / 0.19) 0, transparent 100%),
+    radial-gradient(1px 1px at 44.12% 57.01%, rgb(255 255 255 / 0.38) 0, transparent 100%),
+    radial-gradient(1px 1px at 13.07% 78.58%, rgb(255 255 255 / 0.42) 0, transparent 100%),
+    radial-gradient(1px 1px at 46.76% 46.46%, rgb(255 255 255 / 0.25) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 81.76% 41.05%, rgb(255 255 255 / 0.52) 0, transparent 100%),
+    radial-gradient(1px 1px at 1.57% 6.51%, rgb(255 255 255 / 0.22) 0, transparent 100%),
+    radial-gradient(1px 1px at 26.49% 27.13%, rgb(255 255 255 / 0.24) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 18.72% 71.3%, rgb(255 255 255 / 0.38) 0, transparent 100%),
+    radial-gradient(1px 1px at 1.62% 83.63%, rgb(255 255 255 / 0.62) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 72.42% 37.35%, rgb(255 255 255 / 0.56) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 2.57% 72.5%, rgb(255 255 255 / 0.52) 0, transparent 100%),
+    radial-gradient(2px 2px at 56.9% 92.8%, rgb(255 255 255 / 0.35) 0, transparent 100%),
+    radial-gradient(2px 2px at 85.25% 64.75%, rgb(255 255 255 / 0.43) 0, transparent 100%),
+    radial-gradient(1px 1px at 17.14% 98.19%, rgb(255 255 255 / 0.59) 0, transparent 100%);
+}
+
+/* The grade, poured into a pool of light rather than painted flat across the
+   whole frame. This is what makes the colour change readable: the eye reads a
+   lit volume, where it ignores a near-black field shifting hue. */
+.flat__wash {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  --wash: #1e3585;
+  background:
+    radial-gradient(58% 46% at 50% 42%, var(--wash) 0%, transparent 68%),
+    radial-gradient(90% 70% at 50% 100%, var(--wash) 0%, transparent 60%);
+  opacity: 0.55;
+  filter: blur(8px);
+}
+
+/* Grain, on a fixed pointer-events-none layer so it never repaints with the
+   content underneath it. SVG feTurbulence as a data URI: no image request. */
+.flat__grain {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Holds the eye in the middle of the frame, where the flight is. */
+.flat__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    78% 66% at 50% 50%,
+    transparent 40%,
+    rgb(0 0 0 / 0.42) 100%
+  );
+}
+
+/* Haze banks: three soft fields that the loop fades up as the camera passes
+   through a bank, tinted from the same grade the 3D engine samples. */
+.flat__haze {
+  position: absolute;
+  inset: -12%;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, transform;
+  --haze-tint: #161a25;
+  background-image:
+    radial-gradient(40% 32% at 22% 38%, var(--haze-tint) 0, transparent 70%),
+    radial-gradient(46% 30% at 71% 62%, var(--haze-tint) 0, transparent 72%),
+    radial-gradient(34% 26% at 48% 18%, var(--haze-tint) 0, transparent 68%);
+  /* 2.4 turned the warm stations into a brown cloud that swallowed the text
+     in front of it. Haze is supposed to sit behind the content, not compete
+     with it. */
+  filter: blur(30px) brightness(1.45);
+}
+
+/* Everything that should shift with the pointer lives in here. The stars and
+   the haze stay put, because a starfield that follows your mouse reads as a
+   sticker on the glass rather than as distance. */
+.flat__parallax {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.flat__reel {
+  position: absolute;
+  inset: 0;
+  will-change: clip-path, filter, opacity;
+}
+
+.flat__reel video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Authored at the size it should read at nine units out; the loop scales it. */
+.flat__card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8em;
+  width: max-content;
+  visibility: hidden;
+  opacity: 0;
+  will-change: transform, opacity;
+  pointer-events: none;
+  text-align: center;
+}
+
+
+.flat__card-title {
+  font-family: var(--font-display);
+  font-size: 4.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #f2eee6;
+  white-space: nowrap;
+}
+
+/* The horizontal band. The track is translated by the same camZ every other
+   section reads; only the axis changes. */
+.flat__band {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.flat__track {
+  display: flex;
+  align-items: center;
+  gap: clamp(4.5rem, 8vw, 11rem);
+  padding-inline: clamp(2rem, 6vw, 8rem);
+  will-change: transform;
+}
+
+/* Text over the circle rather than under it. Alternating the two is what
+   stops four discs with four captions from reading as a spec table. */
+/* Circular discs, duotoned toward the accent, each a different diameter and
+   each hung at a different height. Nothing in this band shares a baseline:
+   a row of equal tiles on one line is a table, and the rest of the flight is
+   a volume with things suspended in it. */
+/* ══ After the flight ════════════════════════════════════════════════════ */
+/* Ordinary document flow. Opaque, because it scrolls over the fixed flight
+   layer and the flight must not show through underneath it. */
+.page {
+  position: relative;
+  z-index: 3;
+  /* No background. There is nothing to hand over to: the flight layer is
+     fixed behind the whole document, and once the camera reaches the end it
+     holds there, still graded, with its stars and haze still drifting. These
+     sections simply sit on it. Painting a matching colour here would be a
+     copy of that backdrop competing with the real one, and any seam would be
+     the two disagreeing. */
+  background: none;
+}
+
+/* Opacity only. The parallax below animates transform on these same
+   elements, and two rules fighting over one property is a bug waiting to be
+   filed. The entry position of the parallax supplies the rise anyway. */
+[data-reveal] {
+  opacity: 0;
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0ms);
+}
+
+[data-reveal='in'] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    transition: none;
+  }
+}
+
+/* ── Parallax ────────────────────────────────────────────────────────────── */
+/* Scroll-driven CSS animation: the timeline is the element's own progress
+   through the viewport, so there is no scroll listener, no rAF and no work on
+   the main thread. Where `view()` is unsupported the elements simply sit
+   still, which is a fine thing for them to do.
+
+   Applied to inner elements only. The reveal above animates the wrapper's
+   transform, and two rules fighting over one transform is a bug waiting to
+   be filed. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Kept small on purpose. The figure drifts and its label does not, so a
+       large amplitude closes the gap between them and they collide. */
+    @keyframes drift-up {
+      from { transform: translateY(var(--drift, 14px)); }
+      to { transform: translateY(calc(var(--drift, 14px) * -1)); }
+    }
+
+    @keyframes drift-scale {
+      from { transform: scale(1.3) translateY(6%); }
+      to { transform: scale(1.3) translateY(-6%); }
+    }
+
+    /* The whole column moves, figure and label together, so the amplitude
+       can be large without the two ever closing on each other. Each column
+       travels a different distance, which is what makes the row separate as
+       it passes instead of sliding by as one block. */
+    .stat,
+    .cell {
+      animation: drift-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+
+    .stat { --drift: 36px; }
+    .stat:nth-child(2) { --drift: 14px; }
+    .stat:nth-child(3) { --drift: 54px; }
+
+    .cell { --drift: 26px; }
+    .cell:nth-child(2) { --drift: 10px; }
+    .cell:nth-child(3) { --drift: 42px; }
+    .cell:nth-child(4) { --drift: 16px; }
+
+    .cell__bg {
+      animation: drift-scale linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+
+    .page__mail {
+      --drift: 26px;
+      animation: drift-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
+}
+
+/* ── The count ───────────────────────────────────────────────────────────── */
+.page__stats {
+  padding: clamp(7.2rem, 19.8vh, 14.4rem) var(--gutter) clamp(5rem, 12vh, 10rem);
+}
+
+.page__stats-row {
+  display: grid;
+  gap: clamp(3.5rem, 6vw, 7rem);
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+@media (min-width: 46rem) {
+  .page__stats-row {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+  }
+}
+
+.stat__figure {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 2rem + 5vw, 6.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--bone);
+}
+
+.stat__label {
+  display: block;
+  margin-top: 1.2rem;
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 0.92rem + 0.3vw, 1.18rem);
+  line-height: 1.4;
+  color: rgb(242 238 230 / 0.72);
+  max-width: 20ch;
+}
+
+/* ── Testimonials ────────────────────────────────────────────────────────── */
+/* Four quotes, four cells. Two carry real visual weight, and the wide/narrow
+   rhythm is what keeps it from reading as a table of boxes. */
+.page__quotes {
+  padding: clamp(5rem, 12vh, 10rem) var(--gutter) clamp(8rem, 20vh, 15rem);
+}
+
+.bento {
+  display: grid;
+  gap: clamp(1.1rem, 1.8vw, 2rem);
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+@media (min-width: 46rem) {
+  .bento {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .cell--wide { grid-column: span 4; }
+  .cell--narrow { grid-column: span 2; }
+}
+
+.cell {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  padding: clamp(1.3rem, 2vw, 2.1rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.8rem;
+  min-height: clamp(12rem, 24vh, 17rem);
+  border: 1px solid rgb(242 238 230 / 0.14);
+  border-radius: 14px;
+  background: rgb(242 238 230 / 0.035);
+}
+
+/* The photograph cell. A scrim, because a quote over bare footage is a quote
+   nobody can read. */
+.cell__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) brightness(0.36);
+  z-index: 0;
+}
+
+.cell:has(.cell__bg) {
+  border-color: transparent;
+}
+
+.cell:has(.cell__bg)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgb(8 8 10 / 0.3), rgb(8 8 10 / 0.76));
+}
+
+.cell blockquote,
+.cell figcaption {
+  position: relative;
+  z-index: 2;
+}
+
+.cell--accent {
+  border-color: transparent;
+  background: linear-gradient(150deg, rgb(255 74 28 / 0.92), rgb(146 32 8 / 0.94));
+}
+
+.cell blockquote {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(1.05rem, 0.95rem + 0.55vw, 1.5rem);
+  line-height: 1.34;
+  color: var(--bone);
+  text-wrap: pretty;
+}
+
+.cell figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cell__name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--bone);
+}
+
+.cell__role {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(242 238 230 / 0.62);
+}
+
+/* On the accent field the text goes dark: off-white on orange fails contrast
+   in both directions. */
+.cell--accent blockquote,
+.cell--accent .cell__name {
+  color: #1a0b04;
+}
+
+.cell--accent .cell__role {
+  color: rgb(26 11 4 / 0.74);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.page__footer {
+  border-top: 1px solid rgb(242 238 230 / 0.12);
+  padding: clamp(6rem, 15vh, 11rem) var(--gutter) clamp(2.5rem, 6vh, 4rem);
+}
+
+/* One container, so the address and the credit line share a left edge
+   instead of one being centred and the other not. */
+.page__foot-inner {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.page__mail {
+  display: block;
+  font-family: var(--font-display);
+  /* Sized so the address holds one line from 320px up. It is one unbreakable
+     token, so it cannot ride the normal heading scale, and Libre Baskerville
+     is a good deal wider than the sans this was first tuned against. */
+  font-size: clamp(0.95rem, 0.1rem + 4.1vw, 3.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 0.15em;
+  width: fit-content;
+}
+
+.page__mail:hover {
+  color: var(--accent);
+}
+
+.page__foot-bar {
+  margin-top: clamp(2.5rem, 6vh, 4.5rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(242 238 230 / 0.55);
+}
+
+/* A sentence, not a heading. Two sizes so the eye is led through the band
+   rather than marched along it. */
+.flat__say {
+  flex: none;
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--bone);
+  transform: translateY(var(--dy, 0));
+  text-wrap: pretty;
+}
+
+.flat__say--big {
+  width: clamp(19rem, 38vw, 36rem);
+  font-size: clamp(1.9rem, 1.1rem + 2.1vw, 3.4rem);
+  font-weight: 500;
+  line-height: 1.16;
+  letter-spacing: -0.015em;
+}
+
+.flat__say--small {
+  width: clamp(15rem, 24vw, 21rem);
+  font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.45rem);
+  font-weight: 400;
+  line-height: 1.45;
+  color: rgb(242 238 230 / 0.78);
+}
+
+.flat__disc {
+  flex: none;
+  transform: translateY(var(--dy, 0));
+  position: relative;
+  /* Capped by the panel so a tall viewport cannot push the circle wider
+     than the column it lives in. */
+  width: var(--disc, 26vh);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.flat__disc img,
+.flat__disc video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+  filter: grayscale(1) contrast(1.12) brightness(0.86);
+}
+
+.flat__disc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    200deg,
+    rgb(255 74 28 / 0.3),
+    transparent 58%,
+    rgb(10 16 48 / 0.5)
+  );
+  mix-blend-mode: screen;
+}
+
+
+.flat__line {
+  font-family: var(--font-display);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+  margin: 0;
+  white-space: nowrap;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #f2eee6;
+  text-align: center;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.flat__screen {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 720px;
+  margin: 0;
+  visibility: hidden;
+  opacity: 0;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.flat__screen img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.flat__screen figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  margin-top: 1.4em;
+  font-size: 2.6rem;
+}
+
+.flat__tag {
+  font-family: var(--font-mono);
+  font-size: 0.42em;
+  letter-spacing: 0.18em;
+  color: #8f8a82;
+}
+
+.flat__title {
+  color: #f2eee6;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── No-WebGL fallback ───────────────────────────────────────────────────── */
+/* A dead canvas paints white, which sits over the dark body and leaves the
+   off-white overlay text almost invisible — a white page with a few stray
+   words. Forcing the canvas dark means a GPU failure degrades to a readable
+   page instead of a blank one. */
+.stage,
+.stage canvas {
+  background: #08080a;
+}
+
+.fallback {
+  position: relative;
+  z-index: 3;
+  padding: calc(var(--header-h, 4.5rem) + var(--gutter)) var(--gutter) var(--gutter);
+  max-width: 54rem;
+}
+
+.fallback__kicker {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.8rem;
+}
+
+.fallback__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1rem + 4vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  margin-bottom: 2.5rem;
+}
+
+.fallback__work {
+  list-style: none;
+  margin: 0 0 2.5rem;
+  padding: 0;
+  border-top: 1px solid rgb(242 238 230 / 0.14);
+}
+
+.fallback__work li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgb(242 238 230 / 0.14);
+  font-size: 1.05rem;
+}
+
+.fallback__tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(242 238 230 / 0.55);
+  flex: none;
+}
+
+.fallback__lead {
+  font-family: var(--font-body);
+  color: rgb(242 238 230 / 0.72);
+  margin-bottom: 2rem;
+}
+
+.fallback__cta {
+  display: inline-block;
+  font-size: clamp(1.1rem, 0.4rem + 3vw, 2rem);
+  border-bottom: 2px solid var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.fallback__note {
+  margin-top: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgb(242 238 230 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat { transition: none !important; }
+}
