@@ -1,0 +1,148 @@
+/* ==========================================================================
+   The mobile menu, taken from the other pages so the site has one menu
+   rather than two. Desktop uses this page's own bar (.hud in main.css); only
+   the toggle and the full-screen panel are borrowed.
+   ========================================================================== */
+
+.menu-toggle,
+.mobile-nav {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* ── Menu toggle (mobile) ────────────────────────────────────────────────── */
+.menu-toggle {
+  position: relative;
+  z-index: 2;
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  /* Lines only. The ring was decoration around three rules; the 3rem box
+     stays so the tap target is still a comfortable size. */
+  border: 0;
+  transition: opacity 0.3s var(--ease-out);
+}
+
+.menu-toggle:hover {
+  opacity: 0.7;
+}
+
+.menu-toggle__bars {
+  display: grid;
+  gap: 5px;
+  width: 1.125rem;
+}
+
+.menu-toggle__bars span {
+  display: block;
+  height: 1.5px;
+  width: 100%;
+  background: var(--bone);
+  transition: transform 0.4s var(--ease-in-out),
+    opacity 0.25s var(--ease-out);
+}
+
+.menu-toggle[aria-expanded='true'] .menu-toggle__bars span:first-child {
+  transform: translateY(6.5px) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded='true'] .menu-toggle__bars span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle[aria-expanded='true'] .menu-toggle__bars span:last-child {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+@media (min-width: 62rem) {
+  .menu-toggle {
+    display: none;
+  }
+}
+
+/* ── Mobile overlay menu ─────────────────────────────────────────────────── */
+.mobile-nav {
+  position: fixed;
+  inset: 0;
+  z-index: 790;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--header-h) var(--gutter) var(--sp-5);
+  /* Closed state — JS animates the clip-path open */
+  clip-path: inset(0 0 100% 0);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mobile-nav.is-open {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* The other pages animate this clip open with GSAP. The home page has no
+   GSAP, so the same open state is expressed in CSS. Without it the panel was
+   visible but clipped to nothing, and tapping the menu appeared to do
+   nothing at all. */
+.mobile-nav {
+  transition: clip-path 0.55s var(--ease-in-out), visibility 0s linear 0.55s;
+}
+
+.mobile-nav.is-open {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.55s var(--ease-in-out), visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav { transition: none; }
+}
+
+.mobile-nav__list {
+  display: grid;
+  gap: 0.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.mobile-nav__item {
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.mobile-nav__link {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding-block: clamp(0.75rem, 0.3rem + 1.6vw, 1.35rem);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1rem + 6vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  transition: color 0.35s var(--ease-out), padding-left 0.4s var(--ease-out);
+}
+
+.mobile-nav__link:hover {
+  color: var(--accent);
+  padding-left: 0.75rem;
+}
+
+.mobile-nav__index {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+}
+
+.mobile-nav__foot {
+  margin-top: var(--sp-5);
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--fs-sm);
+  color: var(--bone-dim);
+}
+
+.mobile-nav__foot a:hover {
+  color: var(--accent);
+}

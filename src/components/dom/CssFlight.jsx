@@ -15,7 +15,7 @@ import {
 } from '../../lib/constants.js';
 import { scrollState } from '../../lib/scrollState.js';
 import { flightAt, pxPerUnit, smoothstep, clamp01, HALF_TAN } from '../../lib/flight.js';
-import { gradeAt, toCss, dealHaze, resolveSeed } from '../../lib/atmosphere.js';
+import { gradeAt, toCss, dealHaze, HAZE_SEED } from '../../lib/atmosphere.js';
 
 /**
  * The same flight, without a GPU.
@@ -64,9 +64,7 @@ export default function CssFlight({ reduced = false, haze = 70 }) {
   // the flight path when there is room, centred on the path when there is not.
   const layout = useMemo(() => SCREENS.map(() => ({})), []);
 
-  // Same seed, same bands as the 3D engine — so a shared #seed link shows the
-  // same night whichever renderer the visitor ends up on.
-  const bands = useMemo(() => dealHaze(resolveSeed(), haze).bands, [haze]);
+  const bands = useMemo(() => dealHaze(HAZE_SEED, haze).bands, [haze]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -286,7 +284,17 @@ export default function CssFlight({ reduced = false, haze = 70 }) {
 
         // The halves hang off opposite corners of the window, so each is
         // aligned by the edge that touches it, not by its centre.
-        const cx = edgeX + (dir * -1 * baseW * scale) / 2;
+        let cx = edgeX + (dir * -1 * baseW * scale) / 2;
+
+        // Then kept on screen. The window is a third of the viewport on a
+        // phone, and a line anchored to its right edge is wider than the room
+        // that leaves: "CULTURE MOVE" was starting at -65px and losing its
+        // first word off the left. Where there is room the diagonal is
+        // untouched; where there is not, the line slides back into view.
+        const halfLine = (baseW * scale) / 2;
+        const edgeGap = 14;
+        const limit = Math.max(0, vw / 2 - halfLine - edgeGap);
+        cx = Math.max(-limit, Math.min(limit, cx));
 
         // The halves hang just outside the closed window, but the window
         // grows as the reel opens and will eventually swallow them. Distance

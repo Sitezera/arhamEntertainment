@@ -49,12 +49,59 @@
   --font-body: 'Vollkorn', 'Iowan Old Style', Georgia, serif;
   --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
   --gutter: clamp(1.15rem, 0.6rem + 2.4vw, 3rem);
+
+  /* Required by styles/nav.css, which is copied from the other pages and
+     expects the token names their stylesheet uses. Same values. */
+  --bone-dim: #8f8a82;
+  --line: rgb(242 238 230 / 0.12);
+  --line-strong: rgb(242 238 230 / 0.26);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --fs-sm: clamp(0.875rem, 0.85rem + 0.12vw, 0.95rem);
+  --header-h: 5.25rem;
+  --sp-5: 3rem;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+
+/* The same anchor reset the other pages get from their base.css. Without it
+   the replicated header rendered the brand as a default browser link: blue
+   and underlined, on every screen. */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Same reason as the anchors above: the replicated header assumes the other
+   pages' element resets. Without this the menu button rendered as a solid
+   browser-default circle with its bars invisible against it. */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
 * { margin: 0; padding: 0; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* The page is a scroll piece; the bar is a ruler down the side of it. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar { display: none; }
+
+body.is-locked {
+  overflow: hidden;
+}
 
 body {
   background: var(--ink);
@@ -86,9 +133,16 @@ body {
   pointer-events: none;
 }
 
+/* ── Header ──────────────────────────────────────────────────────────────── */
+/* This page's own bar: wordmark, inline links, one button, nothing behind
+   them. The mobile menu below the breakpoint is borrowed from the other
+   pages, which is why the toggle and panel are styled in nav.css rather than
+   here. */
 .hud {
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -98,10 +152,13 @@ body {
   min-height: 56px;
   max-height: 80px;
   pointer-events: auto;
+  /* Above the mobile panel (790), so the toggle stays reachable once the
+     panel is open and can show its close state. Without this the panel
+     covered the button and there was no way out of the menu. */
+  z-index: 800;
 }
 
 .hud__brand {
-  text-decoration: none;
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -118,8 +175,6 @@ body {
   border-left: 1px solid rgb(242 238 230 / 0.2);
 }
 
-/* Sits between the brand and the CTA on wide screens, and is dropped on
-   narrow ones where the CTA and the brand already fill the bar. */
 .hud__nav {
   display: none;
   margin-left: auto;
@@ -132,145 +187,11 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgb(242 238 230 / 0.66);
-  text-decoration: none;
   padding-block: 0.4rem;
 }
 
-.hud__nav a:hover { color: var(--bone); }
-
-@media (min-width: 52rem) {
-  .hud__nav { display: flex; }
-  /* The menu button and sheet are shared with the static pages, which define
-   them in pages.css. This page does not load that file, so the two rules it
-   needs are repeated here rather than pulling a whole stylesheet in for
-   them. Keep them in step. */
-.hud__menu {
-  margin-left: auto;
-  width: 2.75rem;
-  height: 2.75rem;
-  display: grid;
-  place-items: center;
-  background: none;
-  border: 1px solid rgb(242 238 230 / 0.3);
-  border-radius: 99px;
+.hud__nav a:hover {
   color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-@media (min-width: 52rem) {
-  .hud__menu { display: none; }
-}
-
-.sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: var(--gutter);
-  background: rgb(8 8 10 / 0.97);
-  pointer-events: auto;
-}
-
-.sheet[data-open='true'] { display: flex; }
-
-.sheet a {
-  font-family: var(--font-display);
-  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
-  color: var(--bone);
-  text-decoration: none;
-  padding-block: 0.3rem;
-}
-
-.sheet a[aria-current='page'] { color: var(--accent); }
-
-.sheet__close {
-  position: absolute;
-  top: var(--gutter);
-  right: var(--gutter);
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  background: none;
-  border: 0;
-  color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-}
-
-.hud__cta { margin-left: 0; }
-}
-
-/* The menu button and sheet are shared with the static pages, which define
-   them in pages.css. This page does not load that file, so the two rules it
-   needs are repeated here rather than pulling a whole stylesheet in for
-   them. Keep them in step. */
-.hud__menu {
-  margin-left: auto;
-  width: 2.75rem;
-  height: 2.75rem;
-  display: grid;
-  place-items: center;
-  background: none;
-  border: 1px solid rgb(242 238 230 / 0.3);
-  border-radius: 99px;
-  color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-@media (min-width: 52rem) {
-  .hud__menu { display: none; }
-}
-
-.sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: var(--gutter);
-  background: rgb(8 8 10 / 0.97);
-  pointer-events: auto;
-}
-
-.sheet[data-open='true'] { display: flex; }
-
-.sheet a {
-  font-family: var(--font-display);
-  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
-  color: var(--bone);
-  text-decoration: none;
-  padding-block: 0.3rem;
-}
-
-.sheet a[aria-current='page'] { color: var(--accent); }
-
-.sheet__close {
-  position: absolute;
-  top: var(--gutter);
-  right: var(--gutter);
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  background: none;
-  border: 0;
-  color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  cursor: pointer;
 }
 
 .hud__cta {
@@ -279,7 +200,6 @@ body {
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   color: var(--bone);
-  text-decoration: none;
   border: 1px solid rgb(242 238 230 / 0.3);
   border-radius: 99px;
   padding: 0.7rem 1.2rem;
@@ -292,179 +212,34 @@ body {
   transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
-/* The CTA cannot wrap and cannot shrink its own text, so below this width the
-   header has to give it the room: the descriptor is decorative, the call to
-   action is not. Without this the pill runs past the right edge and is
-   clipped by the overlay rather than wrapping where anyone would see it. */
-@media (max-width: 26rem) {
-  .hud__sub {
-    display: none;
-  }
-
-  /* Sits between the brand and the CTA on wide screens, and is dropped on
-   narrow ones where the CTA and the brand already fill the bar. */
-.hud__nav {
-  display: none;
-  margin-left: auto;
-  gap: clamp(1.1rem, 2.2vw, 2rem);
+.hud__cta:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-.hud__nav a {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgb(242 238 230 / 0.66);
-  text-decoration: none;
-  padding-block: 0.4rem;
+/* The toggle sits beside the CTA on the right. */
+.hud .menu-toggle {
+  margin-left: 0.4rem;
 }
-
-.hud__nav a:hover { color: var(--bone); }
 
 @media (min-width: 52rem) {
   .hud__nav { display: flex; }
-  /* The menu button and sheet are shared with the static pages, which define
-   them in pages.css. This page does not load that file, so the two rules it
-   needs are repeated here rather than pulling a whole stylesheet in for
-   them. Keep them in step. */
-.hud__menu {
-  margin-left: auto;
-  width: 2.75rem;
-  height: 2.75rem;
-  display: grid;
-  place-items: center;
-  background: none;
-  border: 1px solid rgb(242 238 230 / 0.3);
-  border-radius: 99px;
-  color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  pointer-events: auto;
+  .hud__cta { margin-left: 0; }
+  /* The links are there; the hamburger is not needed. */
+  .hud .menu-toggle { display: none; }
 }
 
-@media (min-width: 52rem) {
-  .hud__menu { display: none; }
-}
+/* The CTA cannot wrap and cannot shrink its own text, so below this width the
+   header has to give it the room: the descriptor is decorative, the call to
+   action is not. */
+@media (max-width: 30rem) {
+  .hud__sub { display: none; }
+  .hud__cta { display: none; }
 
-.sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: var(--gutter);
-  background: rgb(8 8 10 / 0.97);
-  pointer-events: auto;
-}
-
-.sheet[data-open='true'] { display: flex; }
-
-.sheet a {
-  font-family: var(--font-display);
-  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
-  color: var(--bone);
-  text-decoration: none;
-  padding-block: 0.3rem;
-}
-
-.sheet a[aria-current='page'] { color: var(--accent); }
-
-.sheet__close {
-  position: absolute;
-  top: var(--gutter);
-  right: var(--gutter);
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  background: none;
-  border: 0;
-  color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-}
-
-.hud__cta { margin-left: 0; }
-}
-
-/* The menu button and sheet are shared with the static pages, which define
-   them in pages.css. This page does not load that file, so the two rules it
-   needs are repeated here rather than pulling a whole stylesheet in for
-   them. Keep them in step. */
-.hud__menu {
-  margin-left: auto;
-  width: 2.75rem;
-  height: 2.75rem;
-  display: grid;
-  place-items: center;
-  background: none;
-  border: 1px solid rgb(242 238 230 / 0.3);
-  border-radius: 99px;
-  color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-@media (min-width: 52rem) {
-  .hud__menu { display: none; }
-}
-
-.sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: var(--gutter);
-  background: rgb(8 8 10 / 0.97);
-  pointer-events: auto;
-}
-
-.sheet[data-open='true'] { display: flex; }
-
-.sheet a {
-  font-family: var(--font-display);
-  font-size: clamp(1.9rem, 1.2rem + 3vw, 3rem);
-  color: var(--bone);
-  text-decoration: none;
-  padding-block: 0.3rem;
-}
-
-.sheet a[aria-current='page'] { color: var(--accent); }
-
-.sheet__close {
-  position: absolute;
-  top: var(--gutter);
-  right: var(--gutter);
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  background: none;
-  border: 0;
-  color: var(--bone);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-}
-
-.hud__cta {
-    padding-inline: 0.85rem;
-    font-size: 0.6rem;
-  }
-}
-
-.hud__cta:hover {
-  background: var(--accent);
-  border-color: var(--accent);
+  /* With the CTA gone, nothing is left carrying the auto margin, so the
+     toggle has to push itself to the right or it ends up against the
+     wordmark. */
+  .hud .menu-toggle { margin-left: auto; }
 }
 
 /* Beats are stacked in the same spot; only one is visible at a time, driven
@@ -482,16 +257,6 @@ body {
    the scene is empty — so it sits in the middle rather than hugging a corner. */
 /* The reel fills the frame at the portal, and its footage can be bright.
    Without this the header sits as off-white text on a white video frame. */
-.hud::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 190%;
-  background: linear-gradient(to bottom, rgb(8 8 10 / 0.55), transparent);
-  pointer-events: none;
-  z-index: -1;
-}
-
 .beat--center {
   left: 0;
   right: 0;
@@ -879,12 +644,15 @@ body {
 
 /* ── The count ───────────────────────────────────────────────────────────── */
 .page__stats {
-  padding: clamp(7.2rem, 19.8vh, 14.4rem) var(--gutter) clamp(5rem, 12vh, 10rem);
+  /* The header is fixed, so the first figure has to clear it. Without the
+     header height in here, "2014" was scrolling up underneath the brand. */
+  padding: calc(var(--header-h) + clamp(2rem, 6vh, 6rem)) var(--gutter)
+    clamp(2rem, 5vh, 5rem);
 }
 
 .page__stats-row {
   display: grid;
-  gap: clamp(3.5rem, 6vw, 7rem);
+  gap: clamp(2.2rem, 5vw, 6rem);
   max-width: 72rem;
   margin-inline: auto;
 }
@@ -919,7 +687,7 @@ body {
 /* Four quotes, four cells. Two carry real visual weight, and the wide/narrow
    rhythm is what keeps it from reading as a table of boxes. */
 .page__quotes {
-  padding: clamp(5rem, 12vh, 10rem) var(--gutter) clamp(8rem, 20vh, 15rem);
+  padding: clamp(3rem, 8vh, 7rem) var(--gutter) clamp(5rem, 13vh, 11rem);
 }
 
 .bento {

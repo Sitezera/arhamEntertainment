@@ -16,7 +16,13 @@
   padding: 0;
 }
 
+html::-webkit-scrollbar { display: none; }
+
 html {
+  /* Bar hidden site-wide; the page is a scroll piece, not a document to
+     measure. Added on top of the copied stylesheet. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: auto; /* Lenis owns scrolling; native smooth would fight it */
 }

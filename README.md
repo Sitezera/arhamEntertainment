@@ -35,8 +35,7 @@ whole projection is about ten lines in `src/lib/flight.js`.
 
 Everything is tuned from `src/lib/constants.js`: depths, timings, copy, and
 `DWELL` for stretches that should scroll slower. `src/lib/atmosphere.js` holds
-the colour of the air, keyed by depth and seeded so no two visits match. Share
-a particular look with `/#seed=premiere`.
+the colour of the air, keyed by depth.
 
 ## Structure
 

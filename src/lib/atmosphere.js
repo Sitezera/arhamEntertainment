@@ -6,10 +6,8 @@
  * weather: the air is graded along its length, and there is haze in it, so
  * you can see that you have gone somewhere.
  *
- * It is written rather than filmed, and seeded rather than fixed. Two visits
- * are not the same room — the haze is dealt from a seed — and any particular
- * night can be brought back from the URL, because a look you cannot show
- * someone again is a look you cannot sign off.
+ * It is written rather than filmed: the grade and the haze are generated,
+ * not authored by hand, from one fixed arrangement.
  *
  * The grade is not sky. This is an entertainment company, so the reference is
  * a venue: cold and empty before the lights, ember while the reel is burning
@@ -29,38 +27,12 @@ export function mulberry32(a) {
 }
 
 /**
- * Accepts "#1234", "#seed=1234", or any other fragment, which is hashed — so
- * "#premiere" is a perfectly good seed. An empty fragment draws a fresh one
- * and writes it back with replaceState, so the address bar always names the
- * room you are actually standing in, without adding a history entry.
+ * The haze arrangement is fixed. It used to be drawn from a seed written into
+ * the URL, which meant every visitor got a different room and the address bar
+ * grew a "#seed=2530252984" nobody asked about. One good arrangement, chosen
+ * once, is simpler and it is what a client would expect to see twice.
  */
-export function resolveSeed() {
-  if (typeof window === 'undefined') return 1;
-
-  const raw = String(window.location.hash || '')
-    .replace(/^#/, '')
-    .replace(/^seed=/i, '')
-    .trim();
-
-  if (raw) {
-    if (/^\d+$/.test(raw)) return Number(raw) >>> 0;
-    let h = 2166136261;
-    for (let i = 0; i < raw.length; i++) {
-      h ^= raw.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  }
-
-  const fresh = (Math.random() * 4294967296) >>> 0;
-  try {
-    window.history.replaceState(null, '', `#seed=${fresh}`);
-  } catch {
-    // A sandboxed frame can refuse this. The seed still works, it just
-    // cannot be shared, which is not worth failing the render over.
-  }
-  return fresh;
-}
+export const HAZE_SEED = 20260928;
 
 /** Stations along the flight. Z descends, so these are in journey order. */
 export const GRADE = [
